@@ -69,19 +69,19 @@ def main(args=sys.argv):
 
                 answer = ' '.join(tokens[start_index:end_index+1])
 
-                corrected_answer = ''
+                llm_answer = ''
 
                 for word in answer.split():
                     
                     #If it's a subword token
                     if word[0:2] == '##':
-                        corrected_answer += word[2:]
+                        llm_answer += word[2:]
                     else:
-                        corrected_answer += ' ' + word
+                        llm_answer += ' ' + word
 
                 print()
                 print(f'question = {question}')
-                print(f'corrected_answer = {corrected_answer}')
+                print(f'llm_answer = {llm_answer}')
                 print(f'expected_answer = {expected_answer}')
                 print()
         
