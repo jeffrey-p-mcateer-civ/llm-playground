@@ -21,66 +21,70 @@ torch = environmentinator.ensure_module('torch', 'torch torchvision torchaudio')
 
 transformers = environmentinator.ensure_module('transformers')
 
+codetiming = environmentinator.ensure_module('codetiming')
 
 from transformers import BertForQuestionAnswering
 from transformers import BertTokenizer
 
 
 def main(args=sys.argv):
-    model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
-    tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
+    with codetiming.Timer(text='{:.2f}s: Entire program run time (incl. model load)'):
+        with codetiming.Timer(text='{:.2f}s: Model load time'):
+            model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
+            tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
 
-    question = '''What color is car 3?'''
+        with codetiming.Timer(text='{:.2f}s: Question-answering time'):
+            question = '''What color is car 3?'''
 
-    questions_and_answer = [
-        ('What color is car 1?', 'blue'),
-        ('What kind of car is car 1?', 'sedan'),
-        ('What color is car 2?', 'white'),
-        ('What kind of car is car 2?', 'Jeep'),
-        ('What color is car 3?', 'black'),
-        ('What color is car 4?', 'green'),
-    ]
+            questions_and_answer = [
+                ('What color is car 1?', 'blue'),
+                ('What kind of car is car 1?', 'sedan'),
+                ('What color is car 2?', 'white'),
+                ('What kind of car is car 2?', 'Jeep'),
+                ('What color is car 3?', 'black'),
+                ('What color is car 4?', 'green'),
+            ]
 
-    paragraph = ''' There is a park with five cars parked. The first car is a blue sedan. The second car is a Jeep colored white. The third car is 
-                        is a black van with baloons attached to the top. Car number four is a green sedan. There are trees surrounding the cars.
-        '''
-    
-    print()
-    print(f'paragraph = {paragraph}')
-        
-    for question, expected_answer in questions_and_answer:
-                    
-        encoding = tokenizer.encode_plus(text=question,text_pair=paragraph)
-
-        inputs = encoding['input_ids']  #Token embeddings
-        sentence_embedding = encoding['token_type_ids']  #Segment embeddings
-        tokens = tokenizer.convert_ids_to_tokens(inputs) #input tokens
-
-        #start_scores, end_scores = model(input_ids=torch.tensor([inputs]), token_type_ids=torch.tensor([sentence_embedding]))
-        start_scores, end_scores = model(torch.tensor([inputs]),token_type_ids=torch.tensor([sentence_embedding]), return_dict=False)
-
-        start_index = torch.argmax(start_scores)
-
-        end_index = torch.argmax(end_scores)
-
-        answer = ' '.join(tokens[start_index:end_index+1])
-
-        corrected_answer = ''
-
-        for word in answer.split():
+            paragraph = ''' There is a park with five cars parked. The first car is a blue sedan. The second car is a Jeep colored white. The third car is 
+                                is a black van with baloons attached to the top. Car number four is a green sedan. There are trees surrounding the cars.
+                '''
             
-            #If it's a subword token
-            if word[0:2] == '##':
-                corrected_answer += word[2:]
-            else:
-                corrected_answer += ' ' + word
+            print()
+            print(f'paragraph = {paragraph}')
+                
+            for question, expected_answer in questions_and_answer:
+                            
+                encoding = tokenizer.encode_plus(text=question,text_pair=paragraph)
 
-        print()
-        print(f'question = {question}')
-        print(f'corrected_answer = {corrected_answer}')
-        print(f'expected_answer = {expected_answer}')
-        print()
-    
+                inputs = encoding['input_ids']  #Token embeddings
+                sentence_embedding = encoding['token_type_ids']  #Segment embeddings
+                tokens = tokenizer.convert_ids_to_tokens(inputs) #input tokens
+
+                #start_scores, end_scores = model(input_ids=torch.tensor([inputs]), token_type_ids=torch.tensor([sentence_embedding]))
+                start_scores, end_scores = model(torch.tensor([inputs]),token_type_ids=torch.tensor([sentence_embedding]), return_dict=False)
+
+                start_index = torch.argmax(start_scores)
+
+                end_index = torch.argmax(end_scores)
+
+                answer = ' '.join(tokens[start_index:end_index+1])
+
+                corrected_answer = ''
+
+                for word in answer.split():
+                    
+                    #If it's a subword token
+                    if word[0:2] == '##':
+                        corrected_answer += word[2:]
+                    else:
+                        corrected_answer += ' ' + word
+
+                print()
+                print(f'question = {question}')
+                print(f'corrected_answer = {corrected_answer}')
+                print(f'expected_answer = {expected_answer}')
+                print()
+        
 
 
 
