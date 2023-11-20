@@ -34,18 +34,19 @@ def main(args=sys.argv):
             tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
 
         with codetiming.Timer(text='{:.2f}s: Question-answering time'):
-            question = '''What color is car 3?'''
-
+            
             questions_and_answer = [
+                ('How many cars are parked?', '4'),
                 ('What color is car 1?', 'blue'),
                 ('What kind of car is car 1?', 'sedan'),
                 ('What color is car 2?', 'white'),
                 ('What kind of car is car 2?', 'Jeep'),
                 ('What color is car 3?', 'black'),
                 ('What color is car 4?', 'green'),
+                ('What color is car 5?', 'no data!'),
             ]
 
-            paragraph = ''' There is a park with five cars parked. The first car is a blue sedan. The second car is a Jeep colored white. The third car is 
+            paragraph = ''' There is a park with cars parked. The first car is a blue sedan. The second car is a Jeep colored white. The third car is 
                                 is a black van with baloons attached to the top. Car number four is a green sedan. There are trees surrounding the cars.
                 '''
             
