@@ -23,13 +23,16 @@ import environmentinator
 torch = environmentinator.ensure_module('torch', 'torch torchvision torchaudio')
 
 # TODO possibly see cuda repo urls: https://huggingface.co/TheBloke/Yi-34B-GPTQ#how-to-use-this-gptq-model-from-python-code
-transformers = environmentinator.ensure_module('transformers', 'transformers optimum auto-gptq')
+#transformers = environmentinator.ensure_module('transformers', 'transformers optimum auto-gptq')
+ctransformers = environmentinator.ensure_module('ctransformers', 'ctransformers')
 
 codetiming = environmentinator.ensure_module('codetiming')
 
 #from transformers import BertForQuestionAnswering
 #from transformers import BertTokenizer
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+#from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from ctransformers import AutoModelForCausalLM, AutoTokenizer
 
 # Grab a copy of https://github.com/lowleveldesign/process-governor#limit-memory-of-a-process
 # and attempt to limit our processes RAM working set to something like 12gb
@@ -65,10 +68,7 @@ def main(args=sys.argv):
             #tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
             #model_path = "TheBloke/Yi-34B-GPTQ"
             model_path = "TheBloke/Yi-34B-GGUF"
-            model = AutoModelForCausalLM.from_pretrained(model_path,
-                                             device_map="auto",
-                                             # trust_remote_code=True,
-                                             revision="main")
+            model = AutoModelForCausalLM.from_pretrained(model_path, model_file="yi-34b.Q4_K_M.gguf", model_type="yi", revision="main")
             tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
 
 
