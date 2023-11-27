@@ -1,6 +1,9 @@
 
 import os
 import sys
+import shutil
+import subprocess
+import traceback
 
 if not 'TRANSFORMERS_CACHE' in os.environ:
     os.environ['TRANSFORMERS_CACHE'] = os.path.join(
@@ -19,19 +22,55 @@ import environmentinator
 # Plain CPU processing
 torch = environmentinator.ensure_module('torch', 'torch torchvision torchaudio')
 
-transformers = environmentinator.ensure_module('transformers')
+# TODO possibly see cuda repo urls: https://huggingface.co/TheBloke/Yi-34B-GPTQ#how-to-use-this-gptq-model-from-python-code
+transformers = environmentinator.ensure_module('transformers', 'transformers optimum auto-gptq')
 
 codetiming = environmentinator.ensure_module('codetiming')
 
-from transformers import BertForQuestionAnswering
-from transformers import BertTokenizer
+#from transformers import BertForQuestionAnswering
+#from transformers import BertTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
+# Grab a copy of https://github.com/lowleveldesign/process-governor#limit-memory-of-a-process
+# and attempt to limit our processes RAM working set to something like 12gb
+if os.name == 'nt':
+    import urllib.request
+    import zipfile
+    if not shutil.which('procgov64'):
+        dl_url = 'https://github.com/lowleveldesign/process-governor/releases/download/2.12/procgov.zip'
+        dl_zipfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'llm-models', 'procgov.zip')
+        if not os.path.exists(dl_zipfile):
+            urllib.request.urlretrieve(dl_url, dl_zipfile)
+        dl_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'llm-models', 'procgov')
+        os.makedirs(dl_folder, exist_ok=True)
+        os.environ['PATH'] = dl_folder + ';' + os.environ['PATH']
+        if not shutil.which('procgov64'):
+            with zipfile.ZipFile(dl_zipfile, 'r') as zip_ref:
+                zip_ref.extractall(dl_folder)
+
+
 
 
 def main(args=sys.argv):
+    if os.name == 'nt' and shutil.which('procgov64'):
+        try:
+            subprocess.run([
+                'procgov64', '--minws', '1200M', '--maxws', '12000M', '-p', f'{os.getpid()}'
+            ])
+        except:
+            traceback.print_exc()
     with codetiming.Timer(text='{:.2f}s: Entire program run time (incl. model load)'):
         with codetiming.Timer(text='{:.2f}s: Model load time'):
-            model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
-            tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
+            #model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
+            #tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
+            #model_path = "TheBloke/Yi-34B-GPTQ"
+            model_path = "TheBloke/Yi-34B-GGUF"
+            model = AutoModelForCausalLM.from_pretrained(model_path,
+                                             device_map="auto",
+                                             # trust_remote_code=True,
+                                             revision="main")
+            tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+
 
         with codetiming.Timer(text='{:.2f}s: Question-answering time'):
             
