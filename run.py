@@ -69,7 +69,7 @@ def main(args=sys.argv):
             #model_path = "TheBloke/Yi-34B-GPTQ"
             model_path = "TheBloke/Yi-34B-GGUF"
             model = AutoModelForCausalLM.from_pretrained(model_path, model_file="yi-34b.Q4_K_M.gguf", model_type="yi", revision="main")
-            tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+            #tokenizer = AutoTokenizer.from_pretrained(model)
 
 
         with codetiming.Timer(text='{:.2f}s: Question-answering time'):
@@ -94,20 +94,21 @@ def main(args=sys.argv):
                 
             for question, expected_answer in questions_and_answer:
                             
-                encoding = tokenizer.encode_plus(text=question,text_pair=paragraph)
+                #encoding = tokenizer.encode_plus(text=question,text_pair=paragraph)
 
-                inputs = encoding['input_ids']  #Token embeddings
-                sentence_embedding = encoding['token_type_ids']  #Segment embeddings
-                tokens = tokenizer.convert_ids_to_tokens(inputs) #input tokens
+                #inputs = encoding['input_ids']  #Token embeddings
+                #sentence_embedding = encoding['token_type_ids']  #Segment embeddings
+                #tokens = tokenizer.convert_ids_to_tokens(inputs) #input tokens
 
-                #start_scores, end_scores = model(input_ids=torch.tensor([inputs]), token_type_ids=torch.tensor([sentence_embedding]))
-                start_scores, end_scores = model(torch.tensor([inputs]),token_type_ids=torch.tensor([sentence_embedding]), return_dict=False)
+                ##start_scores, end_scores = model(input_ids=torch.tensor([inputs]), token_type_ids=torch.tensor([sentence_embedding]))
+                #start_scores, end_scores = model(torch.tensor([inputs]),token_type_ids=torch.tensor([sentence_embedding]), return_dict=False)
+                answer = model(question)
 
-                start_index = torch.argmax(start_scores)
+                #start_index = torch.argmax(start_scores)
 
-                end_index = torch.argmax(end_scores)
+                #end_index = torch.argmax(end_scores)
 
-                answer = ' '.join(tokens[start_index:end_index+1])
+                #answer = ' '.join(tokens[start_index:end_index+1])
 
                 llm_answer = ''
 
