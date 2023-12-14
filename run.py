@@ -23,16 +23,19 @@ import environmentinator
 torch = environmentinator.ensure_module('torch', 'torch torchvision torchaudio')
 
 # TODO possibly see cuda repo urls: https://huggingface.co/TheBloke/Yi-34B-GPTQ#how-to-use-this-gptq-model-from-python-code
-#transformers = environmentinator.ensure_module('transformers', 'transformers optimum auto-gptq')
-ctransformers = environmentinator.ensure_module('ctransformers', 'ctransformers')
+transformers = environmentinator.ensure_module('transformers', 'transformers optimum auto-gptq')
+
+# ctransformers = environmentinator.ensure_module('ctransformers', 'ctransformers')
+
+einops = environmentinator.ensure_module('einops') # For microsoft/phi-2 model use
+
 
 codetiming = environmentinator.ensure_module('codetiming')
 
 #from transformers import BertForQuestionAnswering
 #from transformers import BertTokenizer
-#from transformers import AutoModelForCausalLM, AutoTokenizer
-
-from ctransformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
+# from ctransformers import AutoModelForCausalLM, AutoTokenizer
 
 # Grab a copy of https://github.com/lowleveldesign/process-governor#limit-memory-of-a-process
 # and attempt to limit our processes RAM working set to something like 12gb
@@ -67,9 +70,11 @@ def main(args=sys.argv):
             #model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
             #tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
             #model_path = "TheBloke/Yi-34B-GPTQ"
-            model_path = "TheBloke/Yi-34B-GGUF"
-            model = AutoModelForCausalLM.from_pretrained(model_path, model_file="yi-34b.Q4_K_M.gguf", model_type="yi", revision="main")
+            #model_path = "TheBloke/Yi-34B-GGUF"
+            #model = AutoModelForCausalLM.from_pretrained(model_path, model_file="yi-34b.Q4_K_M.gguf", model_type="yi", revision="main")
+            model = AutoModelForCausalLM.from_pretrained("microsoft/phi-2", torch_dtype=torch.float32, device_map="cpu", trust_remote_code=True)
             #tokenizer = AutoTokenizer.from_pretrained(model)
+            tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", trust_remote_code=True)
 
 
         with codetiming.Timer(text='{:.2f}s: Question-answering time'):
@@ -102,7 +107,13 @@ def main(args=sys.argv):
 
                 ##start_scores, end_scores = model(input_ids=torch.tensor([inputs]), token_type_ids=torch.tensor([sentence_embedding]))
                 #start_scores, end_scores = model(torch.tensor([inputs]),token_type_ids=torch.tensor([sentence_embedding]), return_dict=False)
-                answer = model(question)
+                
+                # answer = model(question)
+
+                inputs = tokenizer(question, return_tensors="pt", return_attention_mask=False)
+                outputs = model.generate(**inputs, max_length=280)
+                answer = tokenizer.batch_decode(outputs)[0]
+
 
                 #start_index = torch.argmax(start_scores)
 
